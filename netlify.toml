@@ -1,0 +1,12 @@
+# Netlify configuration.
+# The static site stays deployable on GitHub Pages; Netlify only needs to host
+# the serverless function. No build step or npm install is required.
+
+[build]
+  # Serve the repo root as the static site (optional — GitHub Pages also works).
+  publish = "."
+  # Where the serverless functions live.
+  functions = "netlify/functions"
+
+# No bundler/build needed: recommend.js is plain CommonJS using the built-in
+# global fetch (Node 18+ runtime on Netlify).

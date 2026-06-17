@@ -3,16 +3,38 @@
 
 const DATA_URL = "data/timetable.json";
 
+// Netlify Function endpoint. Replace YOUR-NETLIFY-SITE with your real site name.
+// The OpenAI API key lives ONLY in the Netlify Function's environment — never here.
+const AI_ENDPOINT =
+  "https://YOUR-NETLIFY-SITE.netlify.app/.netlify/functions/recommend";
+
+const GENRES = [
+  "Rock",
+  "Indie",
+  "Pop",
+  "Punk",
+  "Metal",
+  "Hip-Hop",
+  "Electronic",
+  "Alternative",
+  "Singer-Songwriter",
+  "Hardcore",
+];
+
 const els = {
   dayNav: document.getElementById("day-nav"),
   stageNav: document.getElementById("stage-nav"),
   schedule: document.getElementById("schedule"),
   meta: document.getElementById("festival-meta"),
   source: document.getElementById("source-note"),
+  genreTags: document.getElementById("genre-tags"),
+  generateBtn: document.getElementById("generate-btn"),
+  personalStatus: document.getElementById("personal-status"),
+  personalResult: document.getElementById("personal-result"),
 };
 
 // activeStage === null means "Alle" (no stage filter).
-let state = { data: null, activeDay: 0, activeStage: null };
+let state = { data: null, activeDay: 0, activeStage: null, selectedGenres: new Set() };
 
 init();
 
@@ -56,6 +78,8 @@ function render() {
   });
 
   renderStageFilter();
+  renderGenreTags();
+  els.generateBtn.addEventListener("click", generatePersonal);
 
   if (days.length) {
     selectDay(0);
@@ -140,23 +164,140 @@ function renderSchedule() {
 }
 
 function renderEntry(p) {
+  return makeEntry(p.start, p.end, p.stage, p.band);
+}
+
+// Builds an .entry showing only time, stage and band — used by both the
+// day timetable and the personal timetable.
+function makeEntry(start, end, stageName, bandName) {
   const el = document.createElement("article");
   el.className = "entry";
 
   const time = document.createElement("div");
   time.className = "entry-time";
-  time.textContent = formatTimeRange(p.start, p.end);
+  time.textContent = formatTimeRange(start, end);
 
   const band = document.createElement("div");
   band.className = "entry-band";
-  band.textContent = p.band || "—";
+  band.textContent = bandName || "—";
 
   const stage = document.createElement("div");
   stage.className = "entry-stage";
-  stage.textContent = p.stage || "—";
+  stage.textContent = stageName || "—";
 
   el.append(time, band, stage);
   return el;
+}
+
+// --- Personal timetable ---
+
+function renderGenreTags() {
+  els.genreTags.innerHTML = "";
+  for (const genre of GENRES) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "genre-tag";
+    btn.textContent = genre;
+    btn.setAttribute("aria-pressed", "false");
+    btn.addEventListener("click", () => toggleGenre(genre, btn));
+    els.genreTags.appendChild(btn);
+  }
+}
+
+function toggleGenre(genre, btn) {
+  if (state.selectedGenres.has(genre)) {
+    state.selectedGenres.delete(genre);
+    btn.setAttribute("aria-pressed", "false");
+  } else {
+    state.selectedGenres.add(genre);
+    btn.setAttribute("aria-pressed", "true");
+  }
+}
+
+async function generatePersonal() {
+  const selectedGenres = [...state.selectedGenres];
+
+  if (!selectedGenres.length) {
+    setPersonalStatus("Bitte wähle mindestens ein Genre aus.", "error");
+    return;
+  }
+  if (AI_ENDPOINT.includes("YOUR-NETLIFY-SITE")) {
+    setPersonalStatus(
+      "AI_ENDPOINT ist noch nicht konfiguriert. Trage in script.js deine Netlify-Site-URL ein.",
+      "error"
+    );
+    return;
+  }
+
+  els.personalResult.innerHTML = "";
+  els.generateBtn.disabled = true;
+  setPersonalStatus("Persönlicher Timetable wird erstellt …", "loading");
+
+  try {
+    const res = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selectedGenres, timetable: state.data }),
+    });
+
+    let payload = null;
+    try {
+      payload = await res.json();
+    } catch (_) {
+      /* non-JSON response handled below */
+    }
+
+    if (!res.ok) {
+      const msg =
+        (payload && payload.error) || `Anfrage fehlgeschlagen (HTTP ${res.status}).`;
+      throw new Error(msg);
+    }
+    if (!payload || !Array.isArray(payload.days)) {
+      throw new Error("Unerwartete Antwort vom Server.");
+    }
+
+    renderPersonal(payload.days);
+    setPersonalStatus("", "");
+  } catch (err) {
+    setPersonalStatus(`Fehler: ${err.message}`, "error");
+    console.error(err);
+  } finally {
+    els.generateBtn.disabled = false;
+  }
+}
+
+function renderPersonal(days) {
+  els.personalResult.innerHTML = "";
+
+  const withActs = days.filter(
+    (d) => Array.isArray(d.performances) && d.performances.length
+  );
+  if (!withActs.length) {
+    setPersonalStatus("Keine passenden Auftritte gefunden.", "error");
+    return;
+  }
+
+  for (const day of withActs) {
+    const heading = document.createElement("h3");
+    heading.className = "personal-day";
+    heading.textContent = [day.label, day.date].filter(Boolean).join(" · ");
+    els.personalResult.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = "schedule";
+    const perfs = [...day.performances].sort(
+      (a, b) => toMinutes(a.startTime) - toMinutes(b.startTime)
+    );
+    for (const p of perfs) {
+      list.appendChild(makeEntry(p.startTime, p.endTime, p.stage, p.band));
+    }
+    els.personalResult.appendChild(list);
+  }
+}
+
+function setPersonalStatus(text, kind) {
+  els.personalStatus.textContent = text;
+  els.personalStatus.className = "personal-status" + (kind ? ` ${kind}` : "");
 }
 
 // --- helpers ---

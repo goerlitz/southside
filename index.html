@@ -18,6 +18,20 @@
     <nav class="day-nav" id="day-nav" aria-label="Festivaltage"></nav>
     <nav class="stage-nav" id="stage-nav" aria-label="Stages"></nav>
     <section class="schedule" id="schedule" aria-live="polite"></section>
+
+    <section class="personal" id="personal" aria-labelledby="personal-title">
+      <h2 id="personal-title">Personal Timetable</h2>
+      <p class="personal-intro">
+        Wähle deine Genres und lass dir einen persönlichen, überschneidungsfreien
+        Timetable zusammenstellen.
+      </p>
+      <div class="genre-tags" id="genre-tags" role="group" aria-label="Genres"></div>
+      <button class="generate-btn" id="generate-btn" type="button">
+        Generate personal timetable
+      </button>
+      <p class="personal-status" id="personal-status" aria-live="polite"></p>
+      <div class="personal-result" id="personal-result"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
