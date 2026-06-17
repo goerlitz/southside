@@ -167,7 +167,55 @@ function renderSchedule() {
 }
 
 function renderEntry(p) {
-  return makeEntry(p.start, p.end, p.stage, p.band);
+  const el = makeEntry(p.start, p.end, p.stage, p.band);
+
+  const hasSummary = typeof p.summary === "string" && p.summary.trim();
+  const hasGenres = Array.isArray(p.genres) && p.genres.length > 0;
+  if (!hasSummary && !hasGenres) return el; // nothing to reveal -> stays static
+
+  // Collapsible details panel (hidden until the card is clicked).
+  const details = document.createElement("div");
+  details.className = "entry-details";
+  const inner = document.createElement("div");
+  inner.className = "entry-details-inner";
+
+  if (hasSummary) {
+    const summary = document.createElement("p");
+    summary.className = "entry-summary";
+    summary.textContent = p.summary;
+    inner.appendChild(summary);
+  }
+  if (hasGenres) {
+    const tags = document.createElement("div");
+    tags.className = "entry-genres";
+    for (const g of p.genres) {
+      const tag = document.createElement("span");
+      tag.className = "entry-genre";
+      tag.textContent = g;
+      tags.appendChild(tag);
+    }
+    inner.appendChild(tags);
+  }
+  details.appendChild(inner);
+  el.appendChild(details);
+
+  // Make the card a toggle: click (or Enter/Space) expands/collapses.
+  el.classList.add("entry-expandable");
+  el.setAttribute("role", "button");
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("aria-expanded", "false");
+  const toggle = () => {
+    const expanded = el.classList.toggle("expanded");
+    el.setAttribute("aria-expanded", expanded ? "true" : "false");
+  };
+  el.addEventListener("click", toggle);
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggle();
+    }
+  });
+  return el;
 }
 
 // Builds an .entry showing only time, stage and band — used by both the
