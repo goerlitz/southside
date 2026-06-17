@@ -105,6 +105,7 @@ exports.handler = async (event) => {
       stage: p.stage,
       start: p.start,
       end: p.end,
+      genres: Array.isArray(p.genres) ? p.genres : null,
     })),
   }));
 
@@ -115,7 +116,8 @@ exports.handler = async (event) => {
     "- Only use performances that exist in the provided timetable; never invent bands, stages, or times.",
     "- Copy startTime, endTime, stage and band exactly from the source timetable (times in HH:MM).",
     "- Prefer bands whose music likely matches the selected genres.",
-    "- If a band's genre is unknown, infer carefully and conservatively from the band name; when in doubt, leave it out.",
+    "- Each performance may include a `genres` array; treat it as the primary signal for matching against the selected genres.",
+    "- If a band's `genres` is null or empty, infer carefully and conservatively from the band name; when in doubt, leave it out.",
     "- Avoid overlapping performances within the same day whenever possible.",
     "- Keep one entry per chosen act; produce a focused selection, not the whole lineup.",
     "- Group results by festival day. For each day set: id = lowercase English weekday (e.g. \"friday\"), label = English weekday (e.g. \"Friday\"), date = the day's date (YYYY-MM-DD).",
