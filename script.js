@@ -174,7 +174,8 @@ function makeEntry(start, end, stageName, bandName) {
   el.className = "entry";
 
   const time = document.createElement("div");
-  time.className = "entry-time";
+  // Colour the time to match its stage.
+  time.className = `entry-time time-${stageColorClass(stageName || "")}`;
   time.textContent = formatTimeRange(start, end);
 
   const band = document.createElement("div");
@@ -296,8 +297,17 @@ function renderPersonal(days) {
 }
 
 function setPersonalStatus(text, kind) {
-  els.personalStatus.textContent = text;
   els.personalStatus.className = "personal-status" + (kind ? ` ${kind}` : "");
+  els.personalStatus.textContent = "";
+  if (kind === "loading") {
+    const spinner = document.createElement("span");
+    spinner.className = "spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    els.personalStatus.appendChild(spinner);
+  }
+  if (text) {
+    els.personalStatus.appendChild(document.createTextNode(text));
+  }
 }
 
 // --- helpers ---
