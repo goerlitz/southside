@@ -226,6 +226,85 @@ main {
   margin-top: 2px;
 }
 
+/* Expandable cards (day timetable): reveal summary + genres on click */
+.entry-expandable {
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.entry-expandable:hover,
+.entry-expandable:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.entry-expandable .entry-band {
+  padding-right: 24px;
+  position: relative;
+}
+.entry-expandable .entry-band::after {
+  content: "›";
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  transition: transform 0.3s ease;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 0;
+}
+.entry-expandable.expanded .entry-band::after {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+/* Smooth height animation via grid-template-rows 0fr -> 1fr */
+.entry-details {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.35s ease, opacity 0.3s ease,
+    margin-top 0.35s ease;
+}
+.entry-details-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.entry-expandable.expanded .entry-details {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 12px;
+}
+.entry-summary {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.entry-summary:last-child {
+  margin-bottom: 0;
+}
+.entry-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.entry-genre {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-details,
+  .entry-expandable .entry-band::after {
+    transition: none;
+  }
+}
+
 .empty,
 .error {
   text-align: center;
