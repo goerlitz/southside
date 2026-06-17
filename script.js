@@ -167,10 +167,14 @@ function renderSchedule() {
 }
 
 function renderEntry(p) {
-  const el = makeEntry(p.start, p.end, p.stage, p.band);
+  return makeExpandable(makeEntry(p.start, p.end, p.stage, p.band), p.summary, p.genres);
+}
 
-  const hasSummary = typeof p.summary === "string" && p.summary.trim();
-  const hasGenres = Array.isArray(p.genres) && p.genres.length > 0;
+// Turns an .entry into a click-to-expand card that reveals summary + genres.
+// If there's nothing to show, the card is returned unchanged (stays static).
+function makeExpandable(el, summary, genres) {
+  const hasSummary = typeof summary === "string" && summary.trim();
+  const hasGenres = Array.isArray(genres) && genres.length > 0;
   if (!hasSummary && !hasGenres) return el; // nothing to reveal -> stays static
 
   // Collapsible details panel (hidden until the card is clicked).
@@ -180,15 +184,15 @@ function renderEntry(p) {
   inner.className = "entry-details-inner";
 
   if (hasSummary) {
-    const summary = document.createElement("p");
-    summary.className = "entry-summary";
-    summary.textContent = p.summary;
-    inner.appendChild(summary);
+    const summaryEl = document.createElement("p");
+    summaryEl.className = "entry-summary";
+    summaryEl.textContent = summary;
+    inner.appendChild(summaryEl);
   }
   if (hasGenres) {
     const tags = document.createElement("div");
     tags.className = "entry-genres";
-    for (const g of p.genres) {
+    for (const g of genres) {
       const tag = document.createElement("span");
       tag.className = "entry-genre";
       tag.textContent = g;
@@ -338,6 +342,19 @@ async function generatePersonal() {
   }
 }
 
+// Look up a band's summary + genres from the loaded timetable data, so the
+// personal timetable can reveal the same authoritative info on click.
+function bandInfo(bandName) {
+  for (const day of state.data?.days || []) {
+    for (const p of day.performances || []) {
+      if (p.band === bandName) {
+        return { summary: p.summary, genres: p.genres };
+      }
+    }
+  }
+  return { summary: null, genres: null };
+}
+
 function renderPersonal(days) {
   els.personalResult.innerHTML = "";
 
@@ -361,7 +378,9 @@ function renderPersonal(days) {
       (a, b) => toMinutes(a.startTime) - toMinutes(b.startTime)
     );
     for (const p of perfs) {
-      list.appendChild(makeEntry(p.startTime, p.endTime, p.stage, p.band));
+      const entry = makeEntry(p.startTime, p.endTime, p.stage, p.band);
+      const info = bandInfo(p.band);
+      list.appendChild(makeExpandable(entry, info.summary, info.genres));
     }
     els.personalResult.appendChild(list);
   }

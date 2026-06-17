@@ -7,6 +7,7 @@
   --accent: #ff4d2e;
   --accent-soft: rgba(255, 77, 46, 0.15);
   --border: #2a2f3a;
+  --border-strong: #4b5263;
   --radius: 12px;
 }
 
@@ -232,8 +233,9 @@ main {
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .entry-expandable:hover,
-.entry-expandable:focus-visible {
-  border-color: var(--accent);
+.entry-expandable:focus-visible,
+.entry-expandable.expanded {
+  border-color: var(--border-strong);
   outline: none;
 }
 .entry-expandable .entry-band {
