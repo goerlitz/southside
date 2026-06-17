@@ -29,6 +29,7 @@ const els = {
   stageNav: document.getElementById("stage-nav"),
   schedule: document.getElementById("schedule"),
   bandSearch: document.getElementById("band-search"),
+  searchClear: document.getElementById("search-clear"),
   meta: document.getElementById("festival-meta"),
   source: document.getElementById("source-note"),
   genreTags: document.getElementById("genre-tags"),
@@ -91,14 +92,22 @@ function render() {
   renderGenreTags();
   els.generateBtn.addEventListener("click", generatePersonal);
 
-  // Live band search (debounced) over the current day's schedule.
-  els.bandSearch.addEventListener(
-    "input",
-    debounce((e) => {
-      state.searchQuery = e.target.value;
-      renderSchedule();
-    }, 200)
-  );
+  // Live band search across all days. The clear (×) button shows/hides
+  // immediately; the filtering itself is debounced.
+  const debouncedRender = debounce(renderSchedule, 200);
+  els.bandSearch.addEventListener("input", (e) => {
+    state.searchQuery = e.target.value;
+    els.searchClear.hidden = !e.target.value;
+    setSelectorsDisabled(!!e.target.value.trim()); // immediate, render is debounced
+    debouncedRender();
+  });
+  els.searchClear.addEventListener("click", () => {
+    state.searchQuery = "";
+    els.bandSearch.value = "";
+    els.searchClear.hidden = true;
+    els.bandSearch.focus();
+    renderSchedule();
+  });
 
   if (days.length) {
     selectDay(0);
@@ -160,39 +169,74 @@ function selectDay(index) {
   renderSchedule();
 }
 
+// Does any word in the band name start with the (lowercased) query?
+function matchesBand(band, q) {
+  return (band || "").toLowerCase().split(/\s+/).some((w) => w.startsWith(q));
+}
+
+// Disable day/stage selection while a search is active (search spans all days).
+function setSelectorsDisabled(disabled) {
+  for (const nav of [els.dayNav, els.stageNav]) {
+    nav.classList.toggle("is-disabled", disabled);
+    nav.setAttribute("aria-disabled", disabled ? "true" : "false");
+    for (const btn of nav.children) btn.disabled = disabled;
+  }
+}
+
 function renderSchedule() {
+  const q = state.searchQuery.trim().toLowerCase();
+  setSelectorsDisabled(!!q);
+  els.schedule.innerHTML = "";
+
+  // Search mode: look across ALL days/stages, grouped by day.
+  if (q) {
+    renderSearchResults(q);
+    return;
+  }
+
+  // Normal mode: the active day, optionally filtered by the active stage.
   const day = state.data.days[state.activeDay];
   let performances = Array.isArray(day.performances) ? [...day.performances] : [];
-
   if (state.activeStage) {
     performances = performances.filter((p) => p.stage === state.activeStage);
   }
-
-  // Live band-name search: match the query against the start of any word in
-  // the band name (case-insensitive).
-  const q = state.searchQuery.trim().toLowerCase();
-  if (q) {
-    performances = performances.filter((p) =>
-      (p.band || "").toLowerCase().split(/\s+/).some((w) => w.startsWith(q))
-    );
-  }
-
-  // Chronological sort by start time (entries without a start time go last)
   performances.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
-  els.schedule.innerHTML = "";
   if (!performances.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty";
-    empty.textContent = q
-      ? `Keine Band „${state.searchQuery.trim()}“ gefunden.`
-      : "Für diese Auswahl liegen keine Spielzeiten vor.";
-    els.schedule.appendChild(empty);
+    appendEmpty("Für diese Auswahl liegen keine Spielzeiten vor.");
     return;
   }
   for (const p of performances) {
     els.schedule.appendChild(renderEntry(p));
   }
+}
+
+// Cross-day band search, grouped under a day heading so results stay readable.
+function renderSearchResults(q) {
+  let total = 0;
+  for (const day of state.data.days || []) {
+    const matches = (day.performances || [])
+      .filter((p) => matchesBand(p.band, q))
+      .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    if (!matches.length) continue;
+    total += matches.length;
+
+    const heading = document.createElement("h3");
+    heading.className = "schedule-day";
+    heading.textContent = [day.day, day.date].filter(Boolean).join(" · ");
+    els.schedule.appendChild(heading);
+    for (const p of matches) els.schedule.appendChild(renderEntry(p));
+  }
+  if (!total) {
+    appendEmpty(`Keine Band „${state.searchQuery.trim()}“ gefunden.`);
+  }
+}
+
+function appendEmpty(text) {
+  const empty = document.createElement("p");
+  empty.className = "empty";
+  empty.textContent = text;
+  els.schedule.appendChild(empty);
 }
 
 function renderEntry(p) {

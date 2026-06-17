@@ -183,11 +183,12 @@ main {
 
 /* Band search */
 .search-bar {
+  position: relative;
   margin: 4px 0 16px;
 }
 .band-search {
   width: 100%;
-  padding: 11px 14px;
+  padding: 11px 42px 11px 14px;
   font-size: 0.95rem;
   color: var(--text);
   background: var(--surface);
@@ -203,6 +204,58 @@ main {
 .band-search:focus {
   outline: none;
   border-color: var(--border-strong);
+}
+/* Hide the native (WebKit) search clear so we only show our own button. */
+.band-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-clear {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.search-clear:hover,
+.search-clear:focus-visible {
+  color: var(--text);
+  background: var(--surface-2);
+  outline: none;
+}
+.search-clear[hidden] {
+  display: none;
+}
+
+/* Day/stage selectors are disabled while a search is active. */
+.day-nav.is-disabled,
+.stage-nav.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Day heading inside cross-day search results */
+.schedule-day {
+  margin: 18px 0 2px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.schedule-day:first-child {
+  margin-top: 0;
 }
 
 /* Schedule list */
