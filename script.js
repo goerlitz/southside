@@ -3,10 +3,10 @@
 
 const DATA_URL = "data/timetable.json";
 
-// Netlify Function endpoint. Replace YOUR-NETLIFY-SITE with your real site name.
+// Netlify Function endpoint that builds the personal timetable.
 // The OpenAI API key lives ONLY in the Netlify Function's environment — never here.
 const AI_ENDPOINT =
-  "https://YOUR-NETLIFY-SITE.netlify.app/.netlify/functions/recommend";
+  "https://southsiderec.netlify.app/.netlify/functions/recommend";
 
 const GENRES = [
   "Rock",

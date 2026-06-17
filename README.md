@@ -128,7 +128,7 @@ Node-18-Runtime).
 In `script.js` die Konstante auf die eigene Netlify-Site anpassen:
 
 ```js
-const AI_ENDPOINT = "https://YOUR-NETLIFY-SITE.netlify.app/.netlify/functions/recommend";
+const AI_ENDPOINT = "https://southsiderec.netlify.app/.netlify/functions/recommend";
 ```
 
 ### Request / Response
