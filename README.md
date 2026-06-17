@@ -10,6 +10,8 @@ Reines HTML, CSS und JavaScript – kein Framework, kein npm, kein Build-Step, k
 - Buttons für die Festivaltage
 - Klick auf einen Tag zeigt alle Bands dieses Tages **chronologisch** sortiert
 - Pro Eintrag werden ausschließlich **Zeit, Stage und Bandname** angezeigt
+- Exklusiver **Stage-Filter** (Alle/Green/Blue/Red/White)
+- **Personal Timetable** per KI (siehe unten) – optional über eine Netlify Function
 - Mobil optimiert
 
 ## Datenquelle
@@ -89,3 +91,96 @@ Auf GitHub Pages läuft die Seite direkt aus dem Repo-Root ohne weitere Konfigur
 1. Repository-Einstellungen → **Pages**.
 2. Source: **Deploy from a branch**, Branch `main` (bzw. der gemergte Branch), Ordner `/ (root)`.
 3. Speichern – die Seite ist anschließend unter der angezeigten Pages-URL erreichbar.
+
+## Personal Timetable (Netlify Function)
+
+Zusätzlich zur statischen Tagesansicht gibt es einen **„Personal Timetable"**:
+Man wählt Genres (Rock, Indie, Pop, Punk, Metal, Hip-Hop, Electronic,
+Alternative, Singer-Songwriter, Hardcore) und erhält per KI einen persönlichen,
+möglichst überschneidungsfreien Timetable pro Festivaltag (Anzeige: nur Zeit,
+Stage, Bandname).
+
+Die statische Seite bleibt unverändert auf GitHub Pages lauffähig. Nur der
+KI-Aufruf läuft über eine **Netlify Function** (`netlify/functions/recommend.js`).
+
+### Sicherheit (wichtig)
+
+> Der OpenAI-API-Key wird **ausschließlich** in der Netlify Function aus
+> `process.env.OPENAI_API_KEY` gelesen. Er darf **niemals** in Frontend-JS, HTML,
+> JSON, README-Beispielen oder committetem Code stehen.
+
+### Architektur
+
+- **Frontend** (`index.html` / `script.js` / `style.css`): lädt wie bisher
+  `data/timetable.json`, zeigt Genre-Tags + Button und schickt einen `POST` an
+  den KI-Endpoint.
+- **Backend** (`netlify/functions/recommend.js`): liest den Key aus der
+  Umgebung, ruft die OpenAI Responses API auf, validiert Request **und** Antwort
+  und gibt striktes JSON zurück. CORS-Header erlauben den Aufruf von der
+  GitHub-Pages-Domain.
+
+Monorepo – kein separates Backend-Repo, kein npm/Build-Step nötig
+(`recommend.js` ist reines CommonJS und nutzt das eingebaute `fetch` der
+Node-18-Runtime).
+
+### Endpoint im Frontend setzen
+
+In `script.js` die Konstante auf die eigene Netlify-Site anpassen:
+
+```js
+const AI_ENDPOINT = "https://YOUR-NETLIFY-SITE.netlify.app/.netlify/functions/recommend";
+```
+
+### Request / Response
+
+Request (`POST`, JSON):
+
+```json
+{
+  "selectedGenres": ["Rock", "Punk"],
+  "timetable": { "...": "Inhalt von data/timetable.json" }
+}
+```
+
+Response (JSON):
+
+```json
+{
+  "days": [
+    {
+      "id": "friday",
+      "label": "Friday",
+      "date": "2026-06-19",
+      "performances": [
+        { "startTime": "16:30", "endTime": "17:30", "stage": "Green Stage", "band": "Band Name" }
+      ]
+    }
+  ]
+}
+```
+
+Fehler werden als JSON mit Feld `error` (und ggf. `detail`) zurückgegeben, z. B.
+`400` bei ungültigem Request, `500` wenn `OPENAI_API_KEY` fehlt, `502` bei einem
+fehlgeschlagenen oder ungültigen KI-Aufruf.
+
+### Netlify einrichten
+
+1. Netlify-Site mit diesem Repo verbinden (Functions-Verzeichnis ist in
+   `netlify.toml` als `netlify/functions` gesetzt).
+2. In den Netlify-**Environment variables** setzen:
+   - `OPENAI_API_KEY` = dein OpenAI-Key *(geheim, nur hier)*
+   - optional `OPENAI_MODEL` (Default `gpt-4o-mini`)
+   - optional `ALLOWED_ORIGIN` = deine GitHub-Pages-URL (Default `*`)
+3. Deployen. Die Function ist dann unter
+   `https://<deine-site>.netlify.app/.netlify/functions/recommend` erreichbar.
+4. `AI_ENDPOINT` in `script.js` auf genau diese URL setzen, committen, pushen.
+
+### Lokal testen (optional)
+
+Mit der Netlify CLI lässt sich die Function lokal ausführen:
+
+```bash
+npm install -g netlify-cli   # einmalig
+export OPENAI_API_KEY=sk-...  # nur in der Shell, nicht committen
+netlify dev                   # serviert Seite + Function lokal
+```

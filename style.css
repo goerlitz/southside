@@ -244,3 +244,113 @@ main {
     font-size: 1.5rem;
   }
 }
+
+/* Personal timetable */
+.personal {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.personal h2 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.personal-intro {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.genre-tag {
+  appearance: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease,
+    transform 0.05s ease;
+}
+
+.genre-tag:hover {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.genre-tag:active {
+  transform: scale(0.97);
+}
+
+.genre-tag[aria-pressed="true"] {
+  opacity: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.generate-btn {
+  appearance: none;
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+.generate-btn:hover {
+  filter: brightness(1.08);
+}
+
+.generate-btn:active {
+  transform: scale(0.98);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.personal-status {
+  margin: 14px 0 0;
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+.personal-status.loading {
+  color: var(--muted);
+}
+
+.personal-status.error {
+  color: var(--accent);
+}
+
+.personal-result {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.personal-day {
+  margin: 14px 0 2px;
+  font-size: 1rem;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
