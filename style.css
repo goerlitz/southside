@@ -181,6 +181,30 @@ main {
 .stage-btn.stage-red { --stage: #ff3b30; --stage-on: #fff; }
 .stage-btn.stage-white { --stage: #e5e7eb; --stage-on: #15171c; }
 
+/* Band search */
+.search-bar {
+  margin: 4px 0 16px;
+}
+.band-search {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s ease;
+}
+.band-search::placeholder {
+  color: var(--muted);
+}
+.band-search:focus {
+  outline: none;
+  border-color: var(--border-strong);
+}
+
 /* Schedule list */
 .schedule {
   display: flex;

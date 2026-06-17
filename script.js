@@ -28,6 +28,7 @@ const els = {
   dayNav: document.getElementById("day-nav"),
   stageNav: document.getElementById("stage-nav"),
   schedule: document.getElementById("schedule"),
+  bandSearch: document.getElementById("band-search"),
   meta: document.getElementById("festival-meta"),
   source: document.getElementById("source-note"),
   genreTags: document.getElementById("genre-tags"),
@@ -37,7 +38,13 @@ const els = {
 };
 
 // activeStage === null means "Alle" (no stage filter).
-let state = { data: null, activeDay: 0, activeStage: null, selectedGenres: new Set() };
+let state = {
+  data: null,
+  activeDay: 0,
+  activeStage: null,
+  selectedGenres: new Set(),
+  searchQuery: "",
+};
 
 init();
 
@@ -83,6 +90,15 @@ function render() {
   renderStageFilter();
   renderGenreTags();
   els.generateBtn.addEventListener("click", generatePersonal);
+
+  // Live band search (debounced) over the current day's schedule.
+  els.bandSearch.addEventListener(
+    "input",
+    debounce((e) => {
+      state.searchQuery = e.target.value;
+      renderSchedule();
+    }, 200)
+  );
 
   if (days.length) {
     selectDay(0);
@@ -152,13 +168,26 @@ function renderSchedule() {
     performances = performances.filter((p) => p.stage === state.activeStage);
   }
 
+  // Live band-name search: match the query against the start of any word in
+  // the band name (case-insensitive).
+  const q = state.searchQuery.trim().toLowerCase();
+  if (q) {
+    performances = performances.filter((p) =>
+      (p.band || "").toLowerCase().split(/\s+/).some((w) => w.startsWith(q))
+    );
+  }
+
   // Chronological sort by start time (entries without a start time go last)
   performances.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
   els.schedule.innerHTML = "";
   if (!performances.length) {
-    els.schedule.innerHTML =
-      '<p class="empty">Für diese Auswahl liegen keine Spielzeiten vor.</p>';
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = q
+      ? `Keine Band „${state.searchQuery.trim()}“ gefunden.`
+      : "Für diese Auswahl liegen keine Spielzeiten vor.";
+    els.schedule.appendChild(empty);
     return;
   }
   for (const p of performances) {
@@ -420,6 +449,15 @@ function formatTimeRange(start, end) {
   if (!start && !end) return "–";
   if (start && end) return `${start}–${end}`;
   return start || end;
+}
+
+// Delays calling fn until `wait` ms after the last invocation.
+function debounce(fn, wait) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
 }
 
 function toMinutes(time) {
