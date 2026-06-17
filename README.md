@@ -95,8 +95,10 @@ Auf GitHub Pages läuft die Seite direkt aus dem Repo-Root ohne weitere Konfigur
 ## Personal Timetable (Netlify Function)
 
 Zusätzlich zur statischen Tagesansicht gibt es einen **„Personal Timetable"**:
-Man wählt Genres (Rock, Indie, Pop, Punk, Metal, Hip-Hop, Electronic,
-Alternative, Singer-Songwriter, Hardcore) und erhält per KI einen persönlichen,
+Man wählt Genres (die Hauptgenres Rock, Indie, Pop, Punk, Metal, Hip-Hop,
+Electronic, Alternative, Singer-Songwriter, Hardcore sowie alle weiteren in
+`data/timetable.json` vorkommenden Genres, die automatisch ergänzt werden) und
+erhält per KI einen persönlichen,
 möglichst überschneidungsfreien Timetable pro Festivaltag (Anzeige: nur Zeit,
 Stage, Bandname).
 

@@ -8,7 +8,10 @@ const DATA_URL = "data/timetable.json";
 const AI_ENDPOINT =
   "https://southsiderec.netlify.app/.netlify/functions/recommend";
 
-const GENRES = [
+// Preferred order for the main genres; any further genres found in the
+// timetable data (e.g. Techno, Shoegaze, Ska) are appended alphabetically so
+// the filter always covers every genre that appears in the band descriptions.
+const GENRE_ORDER = [
   "Rock",
   "Indie",
   "Pop",
@@ -192,9 +195,29 @@ function makeEntry(start, end, stageName, bandName) {
 
 // --- Personal timetable ---
 
+// Genres from the data, ordered by GENRE_ORDER first, then alphabetically.
+function uniqueGenres() {
+  const set = new Set(GENRE_ORDER);
+  for (const day of state.data.days || []) {
+    for (const p of day.performances || []) {
+      if (Array.isArray(p.genres)) {
+        for (const g of p.genres) {
+          if (g) set.add(g);
+        }
+      }
+    }
+  }
+  return [...set].sort((a, b) => {
+    const ia = GENRE_ORDER.indexOf(a);
+    const ib = GENRE_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    return a.localeCompare(b);
+  });
+}
+
 function renderGenreTags() {
   els.genreTags.innerHTML = "";
-  for (const genre of GENRES) {
+  for (const genre of uniqueGenres()) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "genre-tag";
