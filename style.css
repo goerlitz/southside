@@ -147,7 +147,7 @@ main {
 }
 
 /* per-stage colours */
-.stage-btn.stage-all { --stage: var(--accent); --stage-on: #fff; }
+.stage-btn.stage-all { --stage: #f5c518; --stage-on: #1a1500; }
 .stage-btn.stage-green { --stage: #34c759; --stage-on: #06210f; }
 .stage-btn.stage-blue { --stage: #3b82f6; --stage-on: #fff; }
 .stage-btn.stage-red { --stage: #ff3b30; --stage-on: #fff; }
@@ -163,7 +163,7 @@ main {
 .entry {
   display: grid;
   grid-template-columns: 96px 1fr;
-  gap: 4px 16px;
+  gap: 4px 22px;
   align-items: baseline;
   background: var(--surface);
   border: 1px solid var(--border);
