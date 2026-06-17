@@ -1,0 +1,23 @@
+{
+  "festival": "Southside Festival 2026",
+  "location": "Take-Off Park, Neuhausen ob Eck",
+  "source": null,
+  "retrieved_at": null,
+  "days": [
+    {
+      "day": "Freitag",
+      "date": "2026-06-19",
+      "performances": []
+    },
+    {
+      "day": "Samstag",
+      "date": "2026-06-20",
+      "performances": []
+    },
+    {
+      "day": "Sonntag",
+      "date": "2026-06-21",
+      "performances": []
+    }
+  ]
+}
