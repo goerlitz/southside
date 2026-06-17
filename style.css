@@ -66,13 +66,13 @@ main {
   font-size: 0.9rem;
 }
 
-/* Day navigation */
+/* Day navigation — always a single row, also on mobile */
 .day-nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 8px;
   justify-content: center;
-  margin: 24px 0;
+  margin: 24px 0 14px;
 }
 
 .day-btn {
@@ -80,10 +80,12 @@ main {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  padding: 10px 18px;
+  padding: 10px 16px;
   border-radius: 999px;
   font-size: 0.95rem;
   font-weight: 600;
+  white-space: nowrap;
+  flex: 0 1 auto;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
 }
@@ -102,12 +104,54 @@ main {
   color: #fff;
 }
 
-.day-btn .day-date {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 400;
-  opacity: 0.8;
+/* Stage filter — exclusive, colour-coded per stage */
+.stage-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 24px;
 }
+
+.stage-btn {
+  appearance: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  /* faded by default */
+  background: transparent;
+  border: 1.5px solid var(--stage, var(--border));
+  color: var(--stage, var(--muted));
+  opacity: 0.55;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease,
+    transform 0.05s ease;
+}
+
+.stage-btn:hover {
+  opacity: 0.85;
+}
+
+.stage-btn:active {
+  transform: scale(0.97);
+}
+
+/* prominent when selected: solid stage colour */
+.stage-btn[aria-pressed="true"] {
+  opacity: 1;
+  background: var(--stage, var(--accent));
+  border-color: var(--stage, var(--accent));
+  color: var(--stage-on, #fff);
+}
+
+/* per-stage colours */
+.stage-btn.stage-all { --stage: var(--accent); --stage-on: #fff; }
+.stage-btn.stage-green { --stage: #34c759; --stage-on: #06210f; }
+.stage-btn.stage-blue { --stage: #3b82f6; --stage-on: #fff; }
+.stage-btn.stage-red { --stage: #ff3b30; --stage-on: #fff; }
+.stage-btn.stage-white { --stage: #e5e7eb; --stage-on: #15171c; }
 
 /* Schedule list */
 .schedule {
@@ -175,7 +219,23 @@ main {
 }
 
 /* Small screens */
-@media (max-width: 420px) {
+@media (max-width: 480px) {
+  /* keep the days on a single line; allow horizontal scroll as a safety net */
+  .day-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .day-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .day-btn {
+    padding: 9px 12px;
+    font-size: 0.82rem;
+  }
   .entry {
     grid-template-columns: 78px 1fr;
     padding: 12px 14px;

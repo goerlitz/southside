@@ -4,13 +4,15 @@
 const DATA_URL = "data/timetable.json";
 
 const els = {
-  nav: document.getElementById("day-nav"),
+  dayNav: document.getElementById("day-nav"),
+  stageNav: document.getElementById("stage-nav"),
   schedule: document.getElementById("schedule"),
   meta: document.getElementById("festival-meta"),
   source: document.getElementById("source-note"),
 };
 
-let state = { data: null, activeDay: null };
+// activeStage === null means "Alle" (no stage filter).
+let state = { data: null, activeDay: 0, activeStage: null };
 
 init();
 
@@ -33,52 +35,95 @@ function render() {
   const days = Array.isArray(data.days) ? data.days : [];
 
   // Header meta
-  const metaParts = [data.festival, data.location].filter(Boolean);
-  els.meta.textContent = metaParts.join(" · ");
+  els.meta.textContent = [data.festival, data.location].filter(Boolean).join(" · ");
 
   // Source note in footer
   if (data.source) {
-    const retrieved = data.retrieved_at
-      ? ` (abgerufen am ${data.retrieved_at})`
-      : "";
+    const retrieved = data.retrieved_at ? ` (abgerufen am ${data.retrieved_at})` : "";
     els.source.textContent = `Quelle: ${data.source}${retrieved}`;
   }
 
-  // Day buttons
-  els.nav.innerHTML = "";
+  // Day buttons (weekday only, no date)
+  els.dayNav.innerHTML = "";
   days.forEach((day, idx) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "day-btn";
     btn.setAttribute("aria-pressed", "false");
-    btn.innerHTML =
-      `<span class="day-name">${escapeHtml(day.day || `Tag ${idx + 1}`)}</span>` +
-      (day.date ? `<span class="day-date">${escapeHtml(formatDate(day.date))}</span>` : "");
+    btn.textContent = day.day || `Tag ${idx + 1}`;
     btn.addEventListener("click", () => selectDay(idx));
-    els.nav.appendChild(btn);
+    els.dayNav.appendChild(btn);
   });
 
-  // Auto-select the first day if available
+  renderStageFilter();
+
   if (days.length) {
     selectDay(0);
   } else {
-    els.schedule.innerHTML =
-      '<p class="empty">Noch keine Timetable-Daten vorhanden.</p>';
+    els.schedule.innerHTML = '<p class="empty">Noch keine Timetable-Daten vorhanden.</p>';
   }
+}
+
+// Preferred order for known stages; anything else is appended alphabetically.
+const STAGE_ORDER = ["Green Stage", "Blue Stage", "Red Stage", "White Stage"];
+
+function uniqueStages() {
+  const set = new Set();
+  for (const day of state.data.days || []) {
+    for (const p of day.performances || []) {
+      if (p.stage) set.add(p.stage);
+    }
+  }
+  return [...set].sort((a, b) => {
+    const ia = STAGE_ORDER.indexOf(a);
+    const ib = STAGE_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    return a.localeCompare(b);
+  });
+}
+
+function renderStageFilter() {
+  els.stageNav.innerHTML = "";
+  const stages = uniqueStages();
+
+  // "Alle" button (value null), then one button per stage.
+  addStageButton("Alle", null, "all");
+  for (const stage of stages) {
+    addStageButton(stageLabel(stage), stage, stageColorClass(stage));
+  }
+}
+
+function addStageButton(label, value, colorClass) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = `stage-btn stage-${colorClass}`;
+  btn.textContent = label;
+  btn.setAttribute("aria-pressed", state.activeStage === value ? "true" : "false");
+  btn.addEventListener("click", () => selectStage(value));
+  els.stageNav.appendChild(btn);
+}
+
+function selectStage(value) {
+  state.activeStage = value;
+  renderStageFilter(); // refresh pressed states
+  renderSchedule();
 }
 
 function selectDay(index) {
   state.activeDay = index;
-
-  // Toggle button states
-  [...els.nav.children].forEach((btn, i) => {
+  [...els.dayNav.children].forEach((btn, i) => {
     btn.setAttribute("aria-pressed", i === index ? "true" : "false");
   });
+  renderSchedule();
+}
 
-  const day = state.data.days[index];
-  const performances = Array.isArray(day.performances)
-    ? [...day.performances]
-    : [];
+function renderSchedule() {
+  const day = state.data.days[state.activeDay];
+  let performances = Array.isArray(day.performances) ? [...day.performances] : [];
+
+  if (state.activeStage) {
+    performances = performances.filter((p) => p.stage === state.activeStage);
+  }
 
   // Chronological sort by start time (entries without a start time go last)
   performances.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
@@ -86,10 +131,9 @@ function selectDay(index) {
   els.schedule.innerHTML = "";
   if (!performances.length) {
     els.schedule.innerHTML =
-      '<p class="empty">Für diesen Tag liegen noch keine Spielzeiten vor.</p>';
+      '<p class="empty">Für diese Auswahl liegen keine Spielzeiten vor.</p>';
     return;
   }
-
   for (const p of performances) {
     els.schedule.appendChild(renderEntry(p));
   }
@@ -117,6 +161,20 @@ function renderEntry(p) {
 
 // --- helpers ---
 
+function stageLabel(stage) {
+  // "Green Stage" -> "Green"; otherwise the full name.
+  return stage.replace(/\s*Stage$/i, "").trim() || stage;
+}
+
+function stageColorClass(stage) {
+  const s = stage.toLowerCase();
+  if (s.includes("green")) return "green";
+  if (s.includes("blue")) return "blue";
+  if (s.includes("red")) return "red";
+  if (s.includes("white")) return "white";
+  return "all";
+}
+
 function formatTimeRange(start, end) {
   if (!start && !end) return "–";
   if (start && end) return `${start}–${end}`;
@@ -132,24 +190,4 @@ function toMinutes(time) {
   let mins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
   if (parseInt(m[1], 10) < 6) mins += 24 * 60;
   return mins;
-}
-
-function formatDate(iso) {
-  // Accepts YYYY-MM-DD, returns a short German date. Falls back to raw value.
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!m) return iso;
-  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-  return d.toLocaleDateString("de-DE", {
-    timeZone: "UTC",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
