@@ -45,7 +45,34 @@ let state = {
   activeStage: null,
   selectedGenres: new Set(),
   searchQuery: "",
+  personalResult: null, // last generated personal timetable (days array)
 };
+
+// Persist the genre selection + last recommendation across page reloads.
+const STORAGE_KEY = "southside-personal";
+
+function persistPersonal() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        genres: [...state.selectedGenres],
+        days: state.personalResult || null,
+      })
+    );
+  } catch (_) {
+    /* storage unavailable (e.g. private mode) — silently skip */
+  }
+}
+
+function loadPersisted() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return data && typeof data === "object" ? data : null;
+  } catch (_) {
+    return null;
+  }
+}
 
 init();
 
@@ -88,9 +115,26 @@ function render() {
     els.dayNav.appendChild(btn);
   });
 
+  // Restore a previously saved genre selection + recommendation (if any).
+  const saved = loadPersisted();
+  if (saved && Array.isArray(saved.genres)) {
+    state.selectedGenres = new Set(saved.genres);
+  }
+  if (saved && Array.isArray(saved.days)) {
+    state.personalResult = saved.days;
+  }
+
   renderStageFilter();
   renderGenreTags();
   els.generateBtn.addEventListener("click", generatePersonal);
+
+  // Re-render the persisted recommendation, if it has any acts.
+  if (
+    Array.isArray(state.personalResult) &&
+    state.personalResult.some((d) => Array.isArray(d.performances) && d.performances.length)
+  ) {
+    renderPersonal(state.personalResult);
+  }
 
   // Live band search across all days. The clear (×) button shows/hides
   // immediately; the filtering itself is debounced.
@@ -347,7 +391,7 @@ function renderGenreTags() {
     btn.type = "button";
     btn.className = "genre-tag";
     btn.textContent = genre;
-    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-pressed", state.selectedGenres.has(genre) ? "true" : "false");
     btn.addEventListener("click", () => toggleGenre(genre, btn));
     els.genreTags.appendChild(btn);
   }
@@ -361,6 +405,7 @@ function toggleGenre(genre, btn) {
     state.selectedGenres.add(genre);
     btn.setAttribute("aria-pressed", "true");
   }
+  persistPersonal();
 }
 
 async function generatePersonal() {
@@ -405,6 +450,8 @@ async function generatePersonal() {
       throw new Error("Unerwartete Antwort vom Server.");
     }
 
+    state.personalResult = payload.days;
+    persistPersonal();
     renderPersonal(payload.days);
     setPersonalStatus("", "");
   } catch (err) {
