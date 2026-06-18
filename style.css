@@ -180,6 +180,7 @@ main {
 .stage-btn.stage-blue { --stage: #3b82f6; --stage-on: #fff; }
 .stage-btn.stage-red { --stage: #ff3b30; --stage-on: #fff; }
 .stage-btn.stage-white { --stage: #e5e7eb; --stage-on: #15171c; }
+.stage-btn.stage-fav { --stage: #f5c518; --stage-on: #1a1500; }
 
 /* Band search */
 .search-bar {
@@ -267,13 +268,39 @@ main {
 
 .entry {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 96px 1fr auto;
   gap: 4px 22px;
   align-items: baseline;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
+}
+
+/* Favorite star (top-right of each card) */
+.entry-fav {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  padding: 0 2px;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+.entry-fav:hover,
+.entry-fav:focus-visible {
+  color: #f5c518;
+  outline: none;
+}
+.entry-fav.is-fav {
+  color: #f5c518;
+}
+.entry-fav:active {
+  transform: scale(1.2);
 }
 
 .entry-time {

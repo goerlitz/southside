@@ -38,7 +38,8 @@ const els = {
   personalResult: document.getElementById("personal-result"),
 };
 
-// activeStage === null means "Alle" (no stage filter).
+// activeStage === null means "Alle"; FAVORITES means "only favorited bands".
+const FAVORITES = "__favorites__";
 let state = {
   data: null,
   activeDay: 0,
@@ -46,7 +47,28 @@ let state = {
   selectedGenres: new Set(),
   searchQuery: "",
   personalResult: null, // last generated personal timetable (days array)
+  favorites: new Set(), // favorited band names
 };
+
+// Persist favorited bands across reloads.
+const FAV_KEY = "southside-favorites";
+
+function persistFavorites() {
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify([...state.favorites]));
+  } catch (_) {
+    /* storage unavailable — silently skip */
+  }
+}
+
+function loadFavorites() {
+  try {
+    const a = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+    return Array.isArray(a) ? a : [];
+  } catch (_) {
+    return [];
+  }
+}
 
 // Persist the genre selection + last recommendation across page reloads.
 const STORAGE_KEY = "southside-personal";
@@ -115,7 +137,8 @@ function render() {
     els.dayNav.appendChild(btn);
   });
 
-  // Restore a previously saved genre selection + recommendation (if any).
+  // Restore favorited bands + a previously saved genre selection / recommendation.
+  state.favorites = new Set(loadFavorites());
   const saved = loadPersisted();
   if (saved && Array.isArray(saved.genres)) {
     state.selectedGenres = new Set(saved.genres);
@@ -182,18 +205,23 @@ function renderStageFilter() {
   els.stageNav.innerHTML = "";
   const stages = uniqueStages();
 
-  // "Alle" button (value null), then one button per stage.
+  // "Alle" button (value null), then one button per stage, then favorites.
   addStageButton("Alle", null, "all");
   for (const stage of stages) {
     addStageButton(stageLabel(stage), stage, stageColorClass(stage));
   }
+  addStageButton("★", FAVORITES, "fav", "Nur Favoriten");
 }
 
-function addStageButton(label, value, colorClass) {
+function addStageButton(label, value, colorClass, title) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = `stage-btn stage-${colorClass}`;
   btn.textContent = label;
+  if (title) {
+    btn.title = title;
+    btn.setAttribute("aria-label", title);
+  }
   btn.setAttribute("aria-pressed", state.activeStage === value ? "true" : "false");
   btn.addEventListener("click", () => selectStage(value));
   els.stageNav.appendChild(btn);
@@ -238,16 +266,22 @@ function renderSchedule() {
     return;
   }
 
-  // Normal mode: the active day, optionally filtered by the active stage.
+  // Normal mode: the active day, filtered by stage or favorites.
   const day = state.data.days[state.activeDay];
   let performances = Array.isArray(day.performances) ? [...day.performances] : [];
-  if (state.activeStage) {
+  if (state.activeStage === FAVORITES) {
+    performances = performances.filter((p) => state.favorites.has(p.band));
+  } else if (state.activeStage) {
     performances = performances.filter((p) => p.stage === state.activeStage);
   }
   performances.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
   if (!performances.length) {
-    appendEmpty("Für diese Auswahl liegen keine Spielzeiten vor.");
+    appendEmpty(
+      state.activeStage === FAVORITES
+        ? "Noch keine Favoriten an diesem Tag. Tippe auf den ☆ einer Band."
+        : "Für diese Auswahl liegen keine Spielzeiten vor."
+    );
     return;
   }
   for (const p of performances) {
@@ -331,6 +365,7 @@ function makeExpandable(el, summary, genres) {
   };
   el.addEventListener("click", toggle);
   el.addEventListener("keydown", (e) => {
+    if (e.target !== el) return; // ignore keys from inner controls (e.g. the star)
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       toggle();
@@ -359,10 +394,44 @@ function makeEntry(start, end, stageName, bandName) {
   stage.textContent = stageName || "—";
 
   el.append(time, band, stage);
+
+  // Favorite star (top-right). Toggles independently of the card's expand.
+  if (bandName) {
+    const fav = document.createElement("button");
+    const on = state.favorites.has(bandName);
+    fav.type = "button";
+    fav.className = "entry-fav" + (on ? " is-fav" : "");
+    fav.dataset.band = bandName;
+    fav.title = "Als Favorit merken";
+    fav.setAttribute("aria-label", "Als Favorit merken");
+    fav.setAttribute("aria-pressed", on ? "true" : "false");
+    fav.textContent = on ? "★" : "☆";
+    fav.addEventListener("click", (e) => {
+      e.stopPropagation(); // don't expand/collapse the card
+      toggleFavorite(bandName);
+    });
+    el.appendChild(fav);
+  }
   return el;
 }
 
-// --- Personal timetable ---
+// Toggle a band's favorite state, persist it, and sync every star on the page.
+function toggleFavorite(band) {
+  if (state.favorites.has(band)) state.favorites.delete(band);
+  else state.favorites.add(band);
+  persistFavorites();
+
+  const on = state.favorites.has(band);
+  for (const btn of document.querySelectorAll(".entry-fav")) {
+    if (btn.dataset.band === band) {
+      btn.classList.toggle("is-fav", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.textContent = on ? "★" : "☆";
+    }
+  }
+  // In the favorites filter, an unfavorited card must drop out of the list.
+  if (state.activeStage === FAVORITES) renderSchedule();
+}
 
 // Genres from the data, ordered by GENRE_ORDER first, then alphabetically.
 function uniqueGenres() {
