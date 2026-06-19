@@ -177,10 +177,34 @@ function render() {
   });
 
   if (days.length) {
-    selectDay(0);
+    selectDay(defaultDayIndex(days));
   } else {
     els.schedule.innerHTML = '<p class="empty">Noch keine Timetable-Daten vorhanden.</p>';
   }
+}
+
+// Default day on load, based on today's (local) date:
+// exact festival day -> that day; before the festival -> first; after -> last.
+function defaultDayIndex(days) {
+  const dates = days.map((d) => d.date).filter(Boolean);
+  if (!dates.length) return 0;
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+
+  const exact = days.findIndex((d) => d.date === today);
+  if (exact !== -1) return exact;
+  if (today < dates[0]) return 0; // before the festival
+  if (today > dates[dates.length - 1]) return days.length - 1; // after the festival
+
+  // Within range but no exact match: the most recent day that has started.
+  let idx = 0;
+  days.forEach((d, i) => {
+    if (d.date && d.date <= today) idx = i;
+  });
+  return idx;
 }
 
 // Preferred order for known stages; anything else is appended alphabetically.
