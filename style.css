@@ -277,6 +277,15 @@ main {
   padding: 14px 16px;
 }
 
+/* Gap between favorited sets (favorites filter only) */
+.entry-gap {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  padding: 1px 0;
+}
+
 /* Favorite star (top-right of each card) */
 .entry-fav {
   grid-column: 3;

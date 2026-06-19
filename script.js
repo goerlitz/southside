@@ -308,9 +308,29 @@ function renderSchedule() {
     );
     return;
   }
-  for (const p of performances) {
+  // In the favorites filter, show the gap between consecutive sets (> 15 min).
+  const showGaps = state.activeStage === FAVORITES;
+  performances.forEach((p, i) => {
+    if (showGaps && i > 0) {
+      const endM = toMinutes(performances[i - 1].end);
+      const startM = toMinutes(p.start);
+      if (endM < Number.MAX_SAFE_INTEGER && startM < Number.MAX_SAFE_INTEGER) {
+        const gap = startM - endM;
+        if (gap > 15) els.schedule.appendChild(makeGap(gap));
+      }
+    }
     els.schedule.appendChild(renderEntry(p));
-  }
+  });
+}
+
+// "h:mm" gap label shown between favorited sets.
+function makeGap(mins) {
+  const el = document.createElement("div");
+  el.className = "entry-gap";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  el.textContent = `Lücke: ${h}:${String(m).padStart(2, "0")}`;
+  return el;
 }
 
 // Cross-day band search, grouped under a day heading so results stay readable.
