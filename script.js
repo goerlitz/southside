@@ -323,13 +323,15 @@ function renderSchedule() {
   });
 }
 
-// "h:mm" gap label shown between favorited sets.
+// Gap label shown between favorited sets. Under an hour: "45 min"; otherwise "h:mm".
 function makeGap(mins) {
   const el = document.createElement("div");
   el.className = "entry-gap";
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  el.textContent = `Lücke: ${h}:${String(m).padStart(2, "0")}`;
+  const label =
+    mins < 60
+      ? `${mins} min`
+      : `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}`;
+  el.textContent = `Pause: ${label}`;
   return el;
 }
 

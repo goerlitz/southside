@@ -279,11 +279,14 @@ main {
 
 /* Gap between favorited sets (favorites filter only) */
 .entry-gap {
-  text-align: center;
+  align-self: center;
+  padding: 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
   font-size: 0.78rem;
   color: var(--muted);
   letter-spacing: 0.3px;
-  padding: 1px 0;
 }
 
 /* Favorite star (top-right of each card) */
