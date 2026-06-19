@@ -139,6 +139,8 @@ function render() {
 
   // Restore favorited bands + a previously saved genre selection / recommendation.
   state.favorites = new Set(loadFavorites());
+  // Show the favorites filter by default when there are any favorites.
+  if (state.favorites.size) state.activeStage = FAVORITES;
   const saved = loadPersisted();
   if (saved && Array.isArray(saved.genres)) {
     state.selectedGenres = new Set(saved.genres);

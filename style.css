@@ -280,12 +280,14 @@ main {
 /* Gap between favorited sets (favorites filter only) */
 .entry-gap {
   align-self: center;
-  padding: 3px 12px;
-  border: 1px solid var(--border);
+  margin: 6px 0;
+  padding: 5px 16px;
+  border: 1px solid var(--accent);
   border-radius: 999px;
-  background: var(--surface);
-  font-size: 0.78rem;
-  color: var(--muted);
+  background: var(--accent-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
   letter-spacing: 0.3px;
 }
 
