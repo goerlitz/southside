@@ -136,7 +136,7 @@ main {
 .stage-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   margin: 0 0 24px;
 }
@@ -145,7 +145,7 @@ main {
   appearance: none;
   cursor: pointer;
   border-radius: 999px;
-  padding: 7px 16px;
+  padding: 7px 10px;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.3px;
